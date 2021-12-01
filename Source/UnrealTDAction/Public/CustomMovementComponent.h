@@ -25,9 +25,11 @@ class UNREALTDACTION_API UCustomMovementComponent : public UActorComponent
 	float SimpleRotationAngle;
 
 	float CurrentVelocity;
+	float CurrentFlyVelocity;
 	int64 StartTimestampToAccumulateForce;
-	TWeakObjectPtr<USceneComponent> SceneComponentToMove;
 	FVector MaxBounds;
+
+	TWeakObjectPtr<USceneComponent> SceneComponentToMove;
 
 public:
 	// Sets default values for this component's properties
@@ -36,12 +38,14 @@ public:
 	void ApplyRotation(float Direction);
 	void StartAccumulateForce();
 	void FinishAccumulateForce();
+	void CalculateMaxBounds();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
 private:
-	FVector CorrectPathDueToPhysics(float DistanceToPass);
+	void TeleportToStart();
+	void CorrectVelocityByGround(float DeltaTime);
+	void CorrectPathByWalls(FVector& DistanceToPass);
 };
