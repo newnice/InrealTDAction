@@ -45,4 +45,37 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	                           &UCustomMovementComponent::FinishAccumulateForce);
 
 	InputComponent->BindAxis("Rotate", MovementComponent, &UCustomMovementComponent::ApplyRotation);
+
+	InputComponent->BindAction("ChainLightning", IE_Pressed, this, &APlayerPawn::ApplyChainLightningAbility);
+}
+
+void APlayerPawn::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	InitAbilities();
+}
+
+int APlayerPawn::GetPawnLevel() const
+{
+	return 1;
+}
+
+void APlayerPawn::InitAbilities()
+{
+	if (!AbilitySystemComponent)
+		return;
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	AbilityHandler = AbilitySystemComponent->GiveAbility(
+		FGameplayAbilitySpec(GrantedAbility, GetPawnLevel(), INDEX_NONE, this));
+}
+
+void APlayerPawn::ApplyChainLightningAbility()
+{
+	AbilitySystemComponent->TryActivateAbility(AbilityHandler);
+}
+
+bool APlayerPawn::FreezeMovement(bool IsEnabled)
+{
+	return MovementComponent->TryFreezeMovement(IsEnabled);
 }

@@ -24,11 +24,15 @@ bool AEnemyManager::IsAnyEnemyAlive() const
 
 void AEnemyManager::KillEnemy(AActor* Enemy)
 {
+	if (!Enemy)
+		return;
+
 	Cast<UAUnrealTDActionGameInstance>(GetWorld()->GetGameInstance())->IncreaseScore();
 	GeneratedEnemies.RemoveSingle(Enemy);
 	Enemy->OnActorBeginOverlap.RemoveAll(this);
 	Enemy->Destroy();
 	TryGenerateBridge();
+	
 	if (!IsAnyEnemyAlive())
 	{
 		Cast<AUnrealTDActionGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()))->DoOnNoEnemiesLeft();

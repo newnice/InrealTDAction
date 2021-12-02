@@ -15,13 +15,14 @@ UCustomMovementComponent::UCustomMovementComponent()
 	FrictionCoefficient = -10;
 	CurrentVelocity = 0;
 	SimpleRotationAngle = 2;
+	IsFreeze = false;
 
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
 void UCustomMovementComponent::ApplyRotation(float Direction)
 {
-	if (Direction == 0 || !SceneComponentToMove.IsValid())
+	if (IsFreeze || Direction == 0 || !SceneComponentToMove.IsValid() || !FMath::IsNearlyZero(CurrentFlyVelocity))
 		return;
 	const auto RotationAngel = Direction < 0 ? SimpleRotationAngle : SimpleRotationAngle * -1;
 
@@ -35,13 +36,16 @@ void UCustomMovementComponent::StartAccumulateForce()
 
 void UCustomMovementComponent::FinishAccumulateForce()
 {
-	const int64 DurationMs = (FDateTime::Now().GetTicks() - StartTimestampToAccumulateForce) /
-		ETimespan::TicksPerMillisecond;
-	const int FinalDurationMs = static_cast<int>(FMath::Clamp<
-		int64>(DurationMs, 0, MaxTimeMs));
+	if (!IsFreeze && FMath::IsNearlyZero(CurrentFlyVelocity))
+	{
+		const int64 DurationMs = (FDateTime::Now().GetTicks() - StartTimestampToAccumulateForce) /
+			ETimespan::TicksPerMillisecond;
+		const int FinalDurationMs = static_cast<int>(FMath::Clamp<
+			int64>(DurationMs, 0, MaxTimeMs));
 
-	const float VelocityToAdd = (MaxAddedVelocity * FinalDurationMs) / MaxTimeMs;
-	CurrentVelocity = CurrentVelocity + VelocityToAdd;
+		const float VelocityToAdd = (MaxAddedVelocity * FinalDurationMs) / MaxTimeMs;
+		CurrentVelocity = CurrentVelocity + VelocityToAdd;
+	}
 
 	StartTimestampToAccumulateForce = 0;
 }
@@ -138,4 +142,21 @@ void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	CorrectFlyVelocityByGround(DeltaTime);
 	CurrentVelocity = FMath::Max(0.f, CurrentVelocity + FrictionCoefficient * DeltaTime);
 	SceneComponentToMove->AddWorldOffset(CalculateLocalOffset(DeltaTime));
+}
+
+bool UCustomMovementComponent::TryFreezeMovement(bool IsFreezeEnabled)
+{
+	if (!FMath::IsNearlyZero(CurrentFlyVelocity))
+	{
+		IsFreeze = false;
+		return false;
+	}
+
+	IsFreeze = IsFreezeEnabled;
+	if (IsFreeze)
+	{
+		CurrentVelocity = 0;
+		CurrentFlyVelocity = 0;
+	}
+	return true;
 }

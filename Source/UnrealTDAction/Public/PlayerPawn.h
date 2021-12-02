@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Abilities/GameplayAbility.h"
 #include "GameFramework/Pawn.h"
 #include "PlayerPawn.generated.h"
 
@@ -29,11 +30,21 @@ class UNREALTDACTION_API APlayerPawn : public APawn
 
 	UPROPERTY(BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UGameplayAbility> GrantedAbility;
+
+
+	FGameplayAbilitySpecHandle AbilityHandler;
 public:
 	// Sets default values for this pawn's properties
 	APlayerPawn();
-
+	bool FreezeMovement(bool IsEnabled);
 protected:
-
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	virtual void PossessedBy(AController* NewController) override;
+private:
+	int GetPawnLevel() const;
+	void InitAbilities();
+	void ApplyChainLightningAbility();
 };

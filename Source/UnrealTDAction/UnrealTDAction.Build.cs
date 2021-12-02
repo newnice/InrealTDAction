@@ -8,7 +8,7 @@ public class UnrealTDAction : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG", "GameplayAbilities"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG", "GameplayAbilities", "GameplayTasks"});
 		
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 		

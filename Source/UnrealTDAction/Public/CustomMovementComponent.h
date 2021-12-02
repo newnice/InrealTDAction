@@ -30,6 +30,7 @@ class UNREALTDACTION_API UCustomMovementComponent : public UActorComponent
 	FVector MaxBounds;
 
 	TWeakObjectPtr<USceneComponent> SceneComponentToMove;
+	bool IsFreeze;
 
 public:
 	UCustomMovementComponent();
@@ -40,6 +41,7 @@ public:
 	void CalculateMaxBounds();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
+	bool TryFreezeMovement(bool IsEnabled);
 protected:
 	virtual void BeginPlay() override;
 private:
