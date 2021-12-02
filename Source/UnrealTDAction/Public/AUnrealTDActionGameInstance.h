@@ -22,4 +22,6 @@ public:
 	{
 		return OnScoreChangedAction;
 	}
+
+	int GetScore() const { return CurrentScore; }
 };
