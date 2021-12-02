@@ -105,12 +105,12 @@ FVector UCustomMovementComponent::CalculateLocalOffset(float DeltaTime) const
 
 	FHitResult OutHitResult;
 	auto TraceStart = SceneComponentToMove->GetComponentLocation() + SceneComponentToMove->GetForwardVector() *
-		MaxBounds.X / 2;
+		MaxBounds.X ;
 	auto TraceEnd = DistanceToPass + TraceStart;
 
 	if (GetWorld()->LineTraceSingleByChannel(OutHitResult, TraceStart, TraceEnd, ECC_WorldStatic))
 	{
-		if (OutHitResult.Distance - MaxBounds.X / 2 <= 0)
+		if (OutHitResult.Distance - MaxBounds.X <= 0)
 		{
 			const auto NewForward = SceneComponentToMove->GetForwardVector() + 2 * OutHitResult.ImpactNormal;
 			const FRotator NewRotation = UKismetMathLibrary::MakeRotFromXZ(NewForward, FVector::UpVector);

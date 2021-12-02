@@ -36,7 +36,7 @@ void UChainLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	}
 
 	ULightningAbilityTask* Task = ULightningAbilityTask::CreateLightningTask(
-		this, NAME_None, AbilityRadius, DelayBetweenAttacks, Avatar->GetActorLocation());
+		this, NAME_None, AbilityRadius, DelayBetweenAttacks, Avatar->GetActorLocation(), Avatar->GetActorForwardVector());
 	Task->OnCompleted.AddDynamic(this, &UChainLightningAbility::OnTaskCompleted);
 
 	Task->ReadyForActivation();

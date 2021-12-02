@@ -21,8 +21,9 @@ class UNREALTDACTION_API ULightningAbilityTask : public UAbilityTask
 	float DelayBetweenAttacks;
 	float AttackRadius;
 	FVector ActorPosition;
+	FVector ForwardVector;
 
-
+	UPROPERTY()
 	TArray<AActor*> EnemiesToDamage;
 	TWeakObjectPtr<AEnemyManager> EnemyManager;
 	float TimeStarted;
@@ -38,11 +39,15 @@ public:
 	                                                  FName TaskInstanceName,
 	                                                  float AbilityRadius,
 	                                                  float DelayBetweenAttacks,
-	                                                  const FVector& StartPoint);
+	                                                  const FVector& StartPoint,
+	                                                  const FVector& ForwardVector);
 	FLightningAbilityTaskDelegate OnCompleted;
 
 private:
 	void ApplyAttack();
 	AEnemyManager* FindEnemyManagerActor() const;
+	TArray<AActor*> SortEnemies(TArray<AActor*>& Array) const;
 	TArray<AActor*> FindDamagedEnemies() const;
+
+	virtual void OnDestroy(bool bInOwnerFinished) override;
 };

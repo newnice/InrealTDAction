@@ -68,7 +68,7 @@ void AEnemyManager::TryGenerateBridge()
 FVector AEnemyManager::CalculateEnemyPosition(const FVector& PlatformPosition, const FVector& PlatformBounds) const
 {
 	auto Position = FVector{
-		FMath::RandRange(0.f, 1.f) * PlatformBounds.X, FMath::RandRange(0.f, 1.f) * PlatformBounds.Y, PlatformBounds.Z
+		FMath::RandRange(-1.f, 1.f) * PlatformBounds.X, FMath::RandRange(-1.f, 1.f) * PlatformBounds.Y, PlatformBounds.Z
 	};
 
 	return Position + PlatformPosition;
@@ -82,12 +82,9 @@ void AEnemyManager::GenerateEnemies()
 		{
 			continue;
 		}
-		auto Mesh = Cast<UStaticMeshComponent>(Platform.Key->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-		if (!Mesh)
-			continue;
 
-		FVector MinBounds, MaxBounds;
-		Mesh->GetLocalBounds(MinBounds, MaxBounds);
+		FVector Origin, MaxBounds;
+		Platform.Key->GetActorBounds(false, Origin, MaxBounds);
 
 		for (auto i = 0; i < Platform.Value; i++)
 		{

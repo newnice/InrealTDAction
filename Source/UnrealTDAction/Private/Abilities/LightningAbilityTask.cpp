@@ -15,13 +15,15 @@ ULightningAbilityTask* ULightningAbilityTask::CreateLightningTask(UGameplayAbili
                                                                   FName TaskInstanceName,
                                                                   float AttackRadius,
                                                                   float DelayBetweenAttacks,
-                                                                  const FVector& StartPoint)
+                                                                  const FVector& StartPoint,
+                                                                  const FVector& ForwardVector)
 {
 	ULightningAbilityTask* LightningTask = NewAbilityTask<ULightningAbilityTask>(OwningAbility, TaskInstanceName);
 	LightningTask->DelayBetweenAttacks = DelayBetweenAttacks;
 	LightningTask->AttackedEnemiesCount = 0;
 	LightningTask->AttackRadius = AttackRadius;
 	LightningTask->ActorPosition = StartPoint;
+	LightningTask->ForwardVector = ForwardVector;
 	LightningTask->PreviousAttackedEnemyLocation = StartPoint;
 	return LightningTask;
 }
@@ -60,14 +62,20 @@ void ULightningAbilityTask::OnTimeFinish()
 
 TArray<AActor*> ULightningAbilityTask::FindDamagedEnemies() const
 {
-	TArray<AActor*> Result;
+	TArray<AActor*> OverlapedEnemies;
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes;
 	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 
 	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), ActorPosition, AttackRadius, TraceObjectTypes,
-	                                          ABaseEnemy::StaticClass(), TArray<AActor*>{}, Result);
+	                                          ABaseEnemy::StaticClass(), TArray<AActor*>{}, OverlapedEnemies);
 
-	return Result;
+	return SortEnemies(OverlapedEnemies);
+}
+
+void ULightningAbilityTask::OnDestroy(bool bInOwnerFinished)
+{
+	EnemiesToDamage.Empty();
+	Super::OnDestroy(bInOwnerFinished);
 }
 
 AEnemyManager* ULightningAbilityTask::FindEnemyManagerActor() const
@@ -78,6 +86,32 @@ AEnemyManager* ULightningAbilityTask::FindEnemyManagerActor() const
 		return *ActorItr;
 	}
 	return nullptr;
+}
+
+TArray<AActor*> ULightningAbilityTask::SortEnemies(TArray<AActor*>& EnemiesToKill) const
+{
+	TMap<AActor*, float> MapForSort{};
+
+	for (auto& Enemy : EnemiesToKill)
+	{
+		auto ActorVector = Enemy->GetActorLocation() - this->ActorPosition;
+		ActorVector.Normalize();
+		auto Dot = FVector::DotProduct(ActorVector, ForwardVector);
+		auto Cross = ActorVector.X * ForwardVector.Y - ActorVector.Y * ForwardVector.X;
+		auto SortPoints = Cross < 0 ? Dot : -(2 + Dot);
+		MapForSort.Add(Enemy, SortPoints);
+	}
+
+	MapForSort.ValueSort([](float A, float B)
+	{
+		return A >= B;
+	});
+
+
+	TArray<AActor*> Result;
+	MapForSort.GenerateKeyArray(Result);
+
+	return Result;
 }
 
 void ULightningAbilityTask::Activate()
@@ -97,8 +131,9 @@ void ULightningAbilityTask::Activate()
 		return;
 	}
 
-	DrawCircle(GetWorld(), ActorPosition,  FVector::ForwardVector, FVector::RightVector,  FColor::Blue, AttackRadius, 32,  false,
-	                DelayBetweenAttacks * EnemiesToDamage.Num() + 1, 0, 5);
+	DrawCircle(GetWorld(), ActorPosition, FVector::ForwardVector, FVector::RightVector, FColor::Blue, AttackRadius, 32,
+	           false,
+	           DelayBetweenAttacks * EnemiesToDamage.Num() + 1, 0, 5);
 
 	ApplyAttack();
 }
