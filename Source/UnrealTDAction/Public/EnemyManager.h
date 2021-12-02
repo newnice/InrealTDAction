@@ -25,6 +25,8 @@ class UNREALTDACTION_API AEnemyManager : public AActor
 
 	UPROPERTY()
 	TArray<AActor*> GeneratedEnemies;
+
+	int GeneratedBridgesAmount;
 public:
 	// Sets default values for this actor's properties
 	AEnemyManager();
@@ -36,6 +38,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	void TryGenerateBridge();
 	void GenerateEnemies();
 	FVector CalculateEnemyPosition(const FVector& PlatformPosition, const FVector& PlatformBounds) const;
 	UFUNCTION()

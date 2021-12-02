@@ -16,6 +16,7 @@ class UNREALTDACTION_API AExitArea : public AActor
 	UBoxComponent* BoxComponent;
 
 public:
-	// Sets default values for this actor's properties
 	AExitArea();
+
+	bool IsCollidedWithPawn() const;
 };

@@ -14,6 +14,7 @@ AEnemyManager::AEnemyManager()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+	GeneratedBridgesAmount = 0;
 }
 
 bool AEnemyManager::IsAnyEnemyAlive() const
@@ -27,6 +28,7 @@ void AEnemyManager::KillEnemy(AActor* Enemy)
 	GeneratedEnemies.RemoveSingle(Enemy);
 	Enemy->OnActorBeginOverlap.RemoveAll(this);
 	Enemy->Destroy();
+	TryGenerateBridge();
 	if (!IsAnyEnemyAlive())
 	{
 		Cast<AUnrealTDActionGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()))->DoOnNoEnemiesLeft();
@@ -38,6 +40,25 @@ void AEnemyManager::BeginPlay()
 {
 	Super::BeginPlay();
 	GenerateEnemies();
+}
+
+void AEnemyManager::TryGenerateBridge()
+{
+	int LeftBridges = PlacesForBridges.Num() - GeneratedBridgesAmount;
+	if (LeftBridges <= 0)
+		return;
+
+	//probability changes to allow all bridges be generated
+	auto ProbabilityToGenerate = LeftBridges * 1.f / GeneratedEnemies.Num();
+	if (ProbabilityToGenerate >= FMath::RandRange(0.f, 1.f))
+	{
+		auto Place = PlacesForBridges[GeneratedBridgesAmount];
+
+		AActor* Bridge = GetWorld()->SpawnActor(BridgeTemplate);
+		Bridge->AttachToActor(Place, FAttachmentTransformRules::SnapToTargetIncludingScale);
+
+		GeneratedBridgesAmount++;
+	}
 }
 
 FVector AEnemyManager::CalculateEnemyPosition(const FVector& PlatformPosition, const FVector& PlatformBounds) const
@@ -53,6 +74,10 @@ void AEnemyManager::GenerateEnemies()
 {
 	for (auto& Platform : PlatformsToGenerate)
 	{
+		if (!Platform.Key)
+		{
+			continue;
+		}
 		auto Mesh = Cast<UStaticMeshComponent>(Platform.Key->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 		if (!Mesh)
 			continue;
@@ -65,7 +90,7 @@ void AEnemyManager::GenerateEnemies()
 			AActor* Enemy = GetWorld()->SpawnActor(EnemyType);
 			Enemy->OnActorBeginOverlap.AddDynamic(this, &AEnemyManager::OnBeginEnemyOverlap);
 			Enemy->SetActorLocation(CalculateEnemyPosition(Platform.Key->GetActorLocation(), MaxBounds));
-			Enemy->SetOwner(this);
+			Enemy->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 
 			GeneratedEnemies.Add(Enemy);
 		}

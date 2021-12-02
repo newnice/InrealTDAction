@@ -58,35 +58,27 @@ void AUnrealTDActionGameModeBase::DoOnLevelChanged()
 {
 	FindAndInitExitArea();
 	FindAndInitEnemyManager();
-
-	if (!EnemyManager.IsValid() || !ExitArea.IsValid())
-		return;
-
-	ExitArea->SetActorEnableCollision(!EnemyManager->IsAnyEnemyAlive());
 }
 
 void AUnrealTDActionGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
-	GetWorld()->OnLevelsChanged().AddUObject(this, &AUnrealTDActionGameModeBase::DoOnLevelChanged);
+	DoOnLevelChanged();
 }
 
-void AUnrealTDActionGameModeBase::DoGameOver()
+void AUnrealTDActionGameModeBase::ApplyGameOver()
 {
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
 	auto HUD = Cast<AMainHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
 	HUD->ShowFinalScreen();
 }
 
-void AUnrealTDActionGameModeBase::DoOnExitReached(AActor* OverlappedActor, AActor* OtherActor)
+void AUnrealTDActionGameModeBase::DoOnLevelCompleted()
 {
-	if (OtherActor != GetWorld()->GetFirstPlayerController()->GetPawn())
-		return;
-
 	auto NextLevel = GetNextLevelName();
 	if (NextLevel.IsEmpty())
 	{
-		DoGameOver();
+		ApplyGameOver();
 	}
 	else
 	{
@@ -94,18 +86,28 @@ void AUnrealTDActionGameModeBase::DoOnExitReached(AActor* OverlappedActor, AActo
 	}
 }
 
+void AUnrealTDActionGameModeBase::DoOnExitReached(AActor* OverlappedActor, AActor* OtherActor)
+{
+	if (OtherActor != GetWorld()->GetFirstPlayerController()->GetPawn())
+		return;
+	if (EnemyManager.IsValid() && EnemyManager->IsAnyEnemyAlive())
+	{
+		return;
+	}
+
+	DoOnLevelCompleted();
+}
+
 void AUnrealTDActionGameModeBase::DoOnNoEnemiesLeft()
 {
-	ExitArea->SetActorEnableCollision(true);
+	if (ExitArea.IsValid() && ExitArea->IsCollidedWithPawn())
+	{
+		DoOnLevelCompleted();
+	}
 }
 
 void AUnrealTDActionGameModeBase::LoadNewLevel(const FString& Name)
 {
-	if (!GetWorld()->GetCurrentLevel()->IsPersistentLevel())
-	{
-		auto LevelName = UGameplayStatics::GetCurrentLevelName(GetWorld());
-		UGameplayStatics::UnloadStreamLevel(GetWorld(), FName{*LevelName}, FLatentActionInfo{}, true);
-	}
-
-	UGameplayStatics::LoadStreamLevel(GetWorld(), FName(*Name), true, true, FLatentActionInfo{});
+	UGameplayStatics::OpenLevel(GetWorld(), FName(*Name));
+	DoOnLevelChanged();
 }

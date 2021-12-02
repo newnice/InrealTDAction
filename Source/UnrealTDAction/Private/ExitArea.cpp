@@ -6,6 +6,10 @@
 AExitArea::AExitArea()
 {
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	PrimaryActorTick.bCanEverTick = false;
+}
+
+bool AExitArea::IsCollidedWithPawn() const
+{
+	return BoxComponent->IsOverlappingActor(GetWorld()->GetFirstPlayerController()->GetPawn());
 }

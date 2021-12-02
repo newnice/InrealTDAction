@@ -18,7 +18,7 @@ class UNREALTDACTION_API AUnrealTDActionGameModeBase : public AGameModeBase
 	TWeakObjectPtr<AExitArea> ExitArea;
 	TWeakObjectPtr<AEnemyManager> EnemyManager;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config, meta = (AllowPrivateAccess = "true"))
 	TArray<FString> LevelsOrder;
 
 public:
@@ -31,11 +31,12 @@ protected:
 private:
 	UFUNCTION()
 	void DoOnExitReached(AActor* OverlappedActor, AActor* OtherActor);
-	
+
 	void DoOnLevelChanged();
 	void FindAndInitExitArea();
 	void FindAndInitEnemyManager();
 	FString GetNextLevelName();
 	void LoadNewLevel(const FString& Name);
-	void DoGameOver();
+	void ApplyGameOver();
+	void DoOnLevelCompleted();
 };
