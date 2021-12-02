@@ -8,6 +8,7 @@
 #include "Components/ArrowComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
+
 APlayerPawn::APlayerPawn()
 {
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshComponent");
@@ -33,11 +34,6 @@ APlayerPawn::APlayerPawn()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-// Called when the game starts or when spawned
-void APlayerPawn::BeginPlay()
-{
-	Super::BeginPlay();
-}
 
 void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {

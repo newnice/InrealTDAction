@@ -32,7 +32,6 @@ class UNREALTDACTION_API UCustomMovementComponent : public UActorComponent
 	TWeakObjectPtr<USceneComponent> SceneComponentToMove;
 
 public:
-	// Sets default values for this component's properties
 	UCustomMovementComponent();
 
 	void ApplyRotation(float Direction);
@@ -42,10 +41,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 private:
 	void TeleportToStart();
-	void CorrectVelocityByGround(float DeltaTime);
-	void CorrectPathByWalls(FVector& DistanceToPass);
+	void CorrectFlyVelocityByGround(float DeltaTime);
+	FVector CalculateLocalOffset(float DeltaTime) const;
 };

@@ -12,13 +12,13 @@ class UNREALTDACTION_API APlayerPawn : public APawn
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* StaticMeshComponent;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UCustomMovementComponent* MovementComponent;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UArrowComponent* ArrowComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -27,15 +27,13 @@ class UNREALTDACTION_API APlayerPawn : public APawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
-	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UAbilitySystemComponent* AbilitySystemComponent;
 public:
 	// Sets default values for this pawn's properties
 	APlayerPawn();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 };
