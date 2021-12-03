@@ -48,19 +48,22 @@ void ULightningAbilityTask::ApplyAttack()
 		                                       DelayBetweenAttacks,
 		                                       true);
 	}
+	else
+	{
+		EndTask();
+	}
 }
 
 
 void ULightningAbilityTask::OnTimeFinish()
 {
-	if (EnemiesToDamage.Num() > 0)
-	{
-		KillSingleEnemy();
-	}
-	else
+	KillSingleEnemy();
+
+	if(EnemiesToDamage.Num() == 0)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 		OnCompleted.Broadcast();
+		EndTask();
 	}
 }
 
@@ -79,6 +82,7 @@ TArray<AActor*> ULightningAbilityTask::FindDamagedEnemies() const
 void ULightningAbilityTask::OnDestroy(bool bInOwnerFinished)
 {
 	EnemiesToDamage.Empty();
+	OnCompleted.Clear();
 	Super::OnDestroy(bInOwnerFinished);
 }
 
@@ -129,12 +133,14 @@ void ULightningAbilityTask::Activate()
 	if (!EnemyManager.IsValid())
 	{
 		OnCompleted.Broadcast();
+		EndTask();
 		return;
 	}
 	EnemiesToDamage = FindDamagedEnemies();
 	if (EnemiesToDamage.Num() == 0)
 	{
 		OnCompleted.Broadcast();
+		EndTask();
 		return;
 	}
 

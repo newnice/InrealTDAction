@@ -65,14 +65,15 @@ void APlayerPawn::InitAbilities()
 {
 	if (!AbilitySystemComponent)
 		return;
-	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
 	AbilityHandler = AbilitySystemComponent->GiveAbility(
 		FGameplayAbilitySpec(GrantedAbility, GetPawnLevel(), INDEX_NONE, this));
 }
 
 void APlayerPawn::ApplyChainLightningAbility()
 {
-	AbilitySystemComponent->TryActivateAbility(AbilityHandler);
+	if (AbilityHandler.IsValid())
+		AbilitySystemComponent->TryActivateAbility(AbilityHandler);
 }
 
 bool APlayerPawn::FreezeMovement(bool IsEnabled)

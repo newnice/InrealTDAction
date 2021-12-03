@@ -46,7 +46,10 @@ private:
 	AEnemyManager* FindEnemyManagerActor() const;
 	TArray<AActor*> SortEnemies(TArray<AActor*>& Array) const;
 	TArray<AActor*> FindDamagedEnemies() const;
+	
+	UFUNCTION()
 	void OnTimeFinish();
+	
 	void KillSingleEnemy();
 
 	virtual void OnDestroy(bool bInOwnerFinished) override;

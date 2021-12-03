@@ -106,8 +106,16 @@ void AUnrealTDActionGameModeBase::DoOnNoEnemiesLeft()
 	}
 }
 
+void AUnrealTDActionGameModeBase::ClearData()
+{
+	if (ExitArea.IsValid())
+		ExitArea->OnActorBeginOverlap.RemoveAll(this);
+}
+
 void AUnrealTDActionGameModeBase::LoadNewLevel(const FString& Name)
 {
+	ClearData();
+
 	UGameplayStatics::OpenLevel(GetWorld(), FName(*Name));
 	DoOnLevelChanged();
 }

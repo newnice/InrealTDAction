@@ -36,6 +36,7 @@ private:
 	void FindAndInitExitArea();
 	void FindAndInitEnemyManager();
 	FString GetNextLevelName();
+	void ClearData();
 	void LoadNewLevel(const FString& Name);
 	void ApplyGameOver();
 	void DoOnLevelCompleted();

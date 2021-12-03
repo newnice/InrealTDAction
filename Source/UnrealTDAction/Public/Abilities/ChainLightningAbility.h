@@ -6,6 +6,7 @@
 #include "Abilities/GameplayAbility.h"
 #include "ChainLightningAbility.generated.h"
 
+class ULightningAbilityTask;
 /**
  * 
  */
@@ -19,6 +20,9 @@ class UNREALTDACTION_API UChainLightningAbility : public UGameplayAbility
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	float DelayBetweenAttacks;
 
+
+	UPROPERTY()
+	ULightningAbilityTask* AbilityTask;
 public:
 	UChainLightningAbility();
 protected:
@@ -26,6 +30,9 @@ protected:
 	                             const FGameplayAbilityActivationInfo ActivationInfo,
 	                             const FGameplayEventData* TriggerEventData) override;
 
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	                        const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility,
+	                        bool bWasCancelled) override;
 private:
 	UFUNCTION()
 	void OnTaskCompleted();
