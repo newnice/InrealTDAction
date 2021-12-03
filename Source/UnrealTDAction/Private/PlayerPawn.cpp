@@ -79,3 +79,8 @@ bool APlayerPawn::FreezeMovement(bool IsEnabled)
 {
 	return MovementComponent->TryFreezeMovement(IsEnabled);
 }
+
+UAbilitySystemComponent* APlayerPawn::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}

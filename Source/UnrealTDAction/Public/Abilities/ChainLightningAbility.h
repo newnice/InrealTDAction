@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyManager.h"
 #include "Abilities/GameplayAbility.h"
 #include "ChainLightningAbility.generated.h"
 

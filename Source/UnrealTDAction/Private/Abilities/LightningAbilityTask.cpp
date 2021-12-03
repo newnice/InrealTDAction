@@ -20,7 +20,6 @@ ULightningAbilityTask* ULightningAbilityTask::CreateLightningTask(UGameplayAbili
 {
 	ULightningAbilityTask* LightningTask = NewAbilityTask<ULightningAbilityTask>(OwningAbility, TaskInstanceName);
 	LightningTask->DelayBetweenAttacks = DelayBetweenAttacks;
-	LightningTask->AttackedEnemiesCount = 0;
 	LightningTask->AttackRadius = AttackRadius;
 	LightningTask->ActorPosition = StartPoint;
 	LightningTask->ForwardVector = ForwardVector;
@@ -28,34 +27,39 @@ ULightningAbilityTask* ULightningAbilityTask::CreateLightningTask(UGameplayAbili
 	return LightningTask;
 }
 
-void ULightningAbilityTask::ApplyAttack()
+void ULightningAbilityTask::KillSingleEnemy()
 {
-	UWorld* World = GetWorld();
-
-	const auto EnemyToKill = EnemiesToDamage[AttackedEnemiesCount];
-	DrawDebugLine(World, PreviousAttackedEnemyLocation, EnemyToKill->GetActorLocation(), FColor::Red, false,
-	              DelayBetweenAttacks + 1, 0, 3.f);
+	auto EnemyIndex = EnemiesToDamage.Num() - 1;
+	const auto EnemyToKill = EnemiesToDamage[EnemyIndex];
+	DrawDebugLine(GetWorld(), PreviousAttackedEnemyLocation, EnemyToKill->GetActorLocation(), FColor::Red, false,
+	              DelayBetweenAttacks + 0.5, 0, 3.f);
 
 	PreviousAttackedEnemyLocation = EnemyToKill->GetActorLocation();
+	EnemiesToDamage.RemoveAt(EnemyIndex);
 	EnemyManager->KillEnemy(EnemyToKill);
-	AttackedEnemiesCount++;
+}
 
-	TimeStarted = World->GetTimeSeconds();
-
-	FTimerHandle TimerHandle;
-	World->GetTimerManager().SetTimer(TimerHandle, this, &ULightningAbilityTask::OnTimeFinish, DelayBetweenAttacks,
-	                                  false);
+void ULightningAbilityTask::ApplyAttack()
+{
+	KillSingleEnemy();
+	if (EnemiesToDamage.Num() > 0)
+	{
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ULightningAbilityTask::OnTimeFinish,
+		                                       DelayBetweenAttacks,
+		                                       true);
+	}
 }
 
 
 void ULightningAbilityTask::OnTimeFinish()
 {
-	if (AttackedEnemiesCount != EnemiesToDamage.Num())
+	if (EnemiesToDamage.Num() > 0)
 	{
-		ApplyAttack();
+		KillSingleEnemy();
 	}
 	else
 	{
+		GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 		OnCompleted.Broadcast();
 	}
 }
@@ -104,7 +108,7 @@ TArray<AActor*> ULightningAbilityTask::SortEnemies(TArray<AActor*>& EnemiesToKil
 
 	MapForSort.ValueSort([](float A, float B)
 	{
-		return A >= B;
+		return A <= B;
 	});
 
 
@@ -117,6 +121,9 @@ TArray<AActor*> ULightningAbilityTask::SortEnemies(TArray<AActor*>& EnemiesToKil
 void ULightningAbilityTask::Activate()
 {
 	Super::Activate();
+	DrawCircle(GetWorld(), ActorPosition, FVector::ForwardVector, FVector::RightVector, FColor::Blue, AttackRadius,
+	           32,
+	           false, 1, 0, 3);
 
 	EnemyManager = FindEnemyManagerActor();
 	if (!EnemyManager.IsValid())
@@ -133,7 +140,7 @@ void ULightningAbilityTask::Activate()
 
 	DrawCircle(GetWorld(), ActorPosition, FVector::ForwardVector, FVector::RightVector, FColor::Blue, AttackRadius, 32,
 	           false,
-	           DelayBetweenAttacks * EnemiesToDamage.Num() + 1, 0, 5);
+	           DelayBetweenAttacks * EnemiesToDamage.Num() + 1, 0, 3);
 
 	ApplyAttack();
 }

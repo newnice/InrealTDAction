@@ -3,13 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "Abilities/GameplayAbility.h"
 #include "GameFramework/Pawn.h"
 #include "PlayerPawn.generated.h"
 
 
 UCLASS()
-class UNREALTDACTION_API APlayerPawn : public APawn
+class UNREALTDACTION_API APlayerPawn : public APawn,  public IAbilitySystemInterface 
 {
 	GENERATED_BODY()
 
@@ -40,6 +41,7 @@ public:
 	// Sets default values for this pawn's properties
 	APlayerPawn();
 	bool FreezeMovement(bool IsEnabled);
+	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void PossessedBy(AController* NewController) override;

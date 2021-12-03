@@ -3,7 +3,6 @@
 
 #include "Abilities/ChainLightningAbility.h"
 
-#include "DrawDebugHelpers.h"
 #include "EngineUtils.h"
 #include "PlayerPawn.h"
 #include "Abilities/LightningAbilityTask.h"
@@ -41,7 +40,6 @@ void UChainLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 
 	Task->ReadyForActivation();
 }
-
 
 void UChainLightningAbility::OnTaskCompleted()
 {
