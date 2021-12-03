@@ -2,9 +2,6 @@
 
 
 #include "EnemyManager.h"
-
-#include <gameux.h>
-
 #include "AUnrealTDActionGameInstance.h"
 #include "UnrealTDActionGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
