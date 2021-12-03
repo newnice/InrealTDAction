@@ -7,16 +7,16 @@
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/KismetMathLibrary.h"
 
-// Sets default values for this component's properties
 UCustomMovementComponent::UCustomMovementComponent()
 {
+	MinAddedVelocity = 100.f;
 	MaxAddedVelocity = 400.f;
 	MaxTimeMs = 2000;
 	FrictionCoefficient = -10;
 	CurrentVelocity = 0;
 	SimpleRotationAngle = 2;
 	IsFreeze = false;
-
+	FreeFlyAcceleration = 980;
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
@@ -43,7 +43,8 @@ void UCustomMovementComponent::FinishAccumulateForce()
 		const int FinalDurationMs = static_cast<int>(FMath::Clamp<
 			int64>(DurationMs, 0, MaxTimeMs));
 
-		const float VelocityToAdd = (MaxAddedVelocity * FinalDurationMs) / MaxTimeMs;
+		const float VelocityToAdd = ((MaxAddedVelocity - MinAddedVelocity) * FinalDurationMs) / MaxTimeMs +
+			MinAddedVelocity;
 		CurrentVelocity = CurrentVelocity + VelocityToAdd;
 	}
 
@@ -85,43 +86,79 @@ void UCustomMovementComponent::TeleportToStart()
 	CurrentFlyVelocity = 0;
 }
 
-void UCustomMovementComponent::CorrectFlyVelocityByGround(float DeltaTime)
+FVector UCustomMovementComponent::CalculateFlyDistance(float DeltaTime)
 {
-	auto FlyVelocity = CurrentFlyVelocity + 980 * DeltaTime;
+	auto DistanceToPassDown = CalculateDistanceToPass(CurrentFlyVelocity, FreeFlyAcceleration, DeltaTime);
 
-	FHitResult OutHitGroundResult;
+	FHitResult OutHitGround;
 	auto TraceStart = SceneComponentToMove->GetComponentLocation();
-	auto TraceEnd = (MaxBounds.Z + FlyVelocity * DeltaTime) * FVector::DownVector + TraceStart;
+	auto TraceEnd = (MaxBounds.Z + DistanceToPassDown) * FVector::DownVector + TraceStart;
 
-	bool IsExistGround = GetWorld()->
-		LineTraceSingleByChannel(OutHitGroundResult, TraceStart, TraceEnd, ECC_WorldStatic);
-	CurrentFlyVelocity = IsExistGround ? 0 : FlyVelocity;
+	bool IsExistGround = GetWorld()->LineTraceSingleByChannel(OutHitGround, TraceStart, TraceEnd, ECC_WorldStatic);
+
+	if (IsExistGround)
+	{
+		CurrentFlyVelocity = 0;
+		return FVector::ZeroVector;
+	}
+
+	CurrentFlyVelocity = CalculateNextVelocity(CurrentFlyVelocity, FreeFlyAcceleration, DeltaTime);
+	return DistanceToPassDown * FVector::DownVector;
 }
 
-FVector UCustomMovementComponent::CalculateLocalOffset(float DeltaTime) const
+FVector UCustomMovementComponent::CorrectDistanceByWalls(float DeltaTime) const
 {
-	auto DistanceToPass = CurrentVelocity * SceneComponentToMove->GetForwardVector() * DeltaTime + CurrentFlyVelocity *
-		FVector::DownVector * DeltaTime;
+	auto DistanceToPass = CalculateDistanceToPass(CurrentVelocity, FrictionCoefficient, DeltaTime) *
+		SceneComponentToMove->GetForwardVector();
 
 	FHitResult OutHitResult;
-	auto TraceStart = SceneComponentToMove->GetComponentLocation() + SceneComponentToMove->GetForwardVector() *
-		MaxBounds.X ;
-	auto TraceEnd = DistanceToPass + TraceStart;
+	auto TraceStart = SceneComponentToMove->GetComponentLocation();
+	auto TraceEnd = DistanceToPass + TraceStart + SceneComponentToMove->GetForwardVector() *
+		MaxBounds.X / 2;
 
-	if (GetWorld()->LineTraceSingleByChannel(OutHitResult, TraceStart, TraceEnd, ECC_WorldStatic))
+	auto HitExist = GetWorld()->LineTraceSingleByChannel(OutHitResult, TraceStart, TraceEnd, ECC_WorldStatic);
+
+
+	if (HitExist)
 	{
-		if (OutHitResult.Distance - MaxBounds.X <= 0)
+		auto DistanceToWall = OutHitResult.Distance - MaxBounds.X / 2;
+		if (FMath::IsNearlyZero(DistanceToWall, 0.1f) || DistanceToWall < 0)
 		{
 			const auto NewForward = SceneComponentToMove->GetForwardVector() + 2 * OutHitResult.ImpactNormal;
 			const FRotator NewRotation = UKismetMathLibrary::MakeRotFromXZ(NewForward, FVector::UpVector);
-
 			SceneComponentToMove->SetWorldRotation(NewRotation);
-			return OutHitResult.Distance * NewForward;
+
+			return CalculateDistanceToPass(CurrentVelocity, FrictionCoefficient, DeltaTime) * NewForward;
 		}
 
-		return OutHitResult.Distance * SceneComponentToMove->GetForwardVector();
+		return DistanceToWall * SceneComponentToMove->GetForwardVector();
 	}
+
 	return DistanceToPass;
+}
+
+FVector UCustomMovementComponent::CalculateGroundDistance(float DeltaTime)
+{
+	FVector GroundDistance;
+	if (FMath::IsNearlyZero(CurrentFlyVelocity))
+		GroundDistance = CorrectDistanceByWalls(DeltaTime);
+	else
+		GroundDistance = CalculateDistanceToPass(CurrentVelocity, FrictionCoefficient, DeltaTime) * SceneComponentToMove
+			->GetForwardVector();
+
+	CurrentVelocity = CalculateNextVelocity(CurrentVelocity, FrictionCoefficient, DeltaTime);
+
+	return GroundDistance;
+}
+
+float UCustomMovementComponent::CalculateDistanceToPass(float Velocity, float Acceleration, float DeltaTime) const
+{
+	return Velocity * DeltaTime + Acceleration * DeltaTime * DeltaTime / 2;
+}
+
+float UCustomMovementComponent::CalculateNextVelocity(float Velocity, float Acceleration, float DeltaTime) const
+{
+	return FMath::Max(0.f, Velocity + Acceleration * DeltaTime);
 }
 
 void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -139,9 +176,9 @@ void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		return;
 	}
 
-	CorrectFlyVelocityByGround(DeltaTime);
-	CurrentVelocity = FMath::Max(0.f, CurrentVelocity + FrictionCoefficient * DeltaTime);
-	SceneComponentToMove->AddWorldOffset(CalculateLocalOffset(DeltaTime));
+	auto DistanceByFly = CalculateFlyDistance(DeltaTime);
+	auto DistanceByGround = CalculateGroundDistance(DeltaTime);
+	SceneComponentToMove->AddWorldOffset(DistanceByFly + DistanceByGround);
 }
 
 bool UCustomMovementComponent::TryFreezeMovement(bool IsFreezeEnabled)

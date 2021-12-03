@@ -12,6 +12,10 @@ class UNREALTDACTION_API UCustomMovementComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config, meta = (AllowPrivateAccess = "true"))
+	float MinAddedVelocity;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config, meta = (AllowPrivateAccess = "true"))
 	float MaxAddedVelocity;
 
@@ -31,6 +35,7 @@ class UNREALTDACTION_API UCustomMovementComponent : public UActorComponent
 
 	TWeakObjectPtr<USceneComponent> SceneComponentToMove;
 	bool IsFreeze;
+	float FreeFlyAcceleration;
 
 public:
 	UCustomMovementComponent();
@@ -46,6 +51,9 @@ protected:
 	virtual void BeginPlay() override;
 private:
 	void TeleportToStart();
-	void CorrectFlyVelocityByGround(float DeltaTime);
-	FVector CalculateLocalOffset(float DeltaTime) const;
+	FVector CalculateFlyDistance(float DeltaTime);
+	FVector CalculateGroundDistance(float DeltaTime);
+	FVector CorrectDistanceByWalls(float DeltaTime) const;
+	float CalculateDistanceToPass(float Velocity, float Acceleration, float DeltaTime) const;
+	float CalculateNextVelocity(float Velocity, float Acceleration, float DeltaTime) const;
 };
