@@ -16,7 +16,7 @@ UCustomMovementComponent::UCustomMovementComponent()
 	CurrentVelocity = 0;
 	SimpleRotationAngle = 2;
 	IsFreeze = false;
-	FreeFlyAcceleration = 980;
+	FreeFlyAcceleration = 9800;
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
