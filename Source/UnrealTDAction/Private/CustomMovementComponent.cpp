@@ -43,8 +43,7 @@ void UCustomMovementComponent::FinishAccumulateForce()
 		const int FinalDurationMs = static_cast<int>(FMath::Clamp<
 			int64>(DurationMs, 0, MaxTimeMs));
 
-		const float VelocityToAdd = ((MaxAddedVelocity - MinAddedVelocity) * FinalDurationMs) / MaxTimeMs +
-			MinAddedVelocity;
+		const float VelocityToAdd = FMath::Lerp(MinAddedVelocity, MaxAddedVelocity, FinalDurationMs * 1.f / MaxTimeMs);
 		CurrentVelocity = CurrentVelocity + VelocityToAdd;
 	}
 
@@ -92,7 +91,7 @@ FVector UCustomMovementComponent::CalculateFlyDistance(float DeltaTime)
 
 	FHitResult OutHitGround;
 	auto TraceStart = SceneComponentToMove->GetComponentLocation();
-	auto TraceEnd = (MaxBounds.Z + DistanceToPassDown) * FVector::DownVector + TraceStart;
+	auto TraceEnd = (MaxBounds.Z / 2 + DistanceToPassDown) * FVector::DownVector + TraceStart;
 
 	bool IsExistGround = GetWorld()->LineTraceSingleByChannel(OutHitGround, TraceStart, TraceEnd, ECC_WorldStatic);
 
@@ -108,13 +107,11 @@ FVector UCustomMovementComponent::CalculateFlyDistance(float DeltaTime)
 
 FVector UCustomMovementComponent::CorrectDistanceByWalls(float DeltaTime) const
 {
-	auto DistanceToPass = CalculateDistanceToPass(CurrentVelocity, FrictionCoefficient, DeltaTime) *
-		SceneComponentToMove->GetForwardVector();
+	auto DistanceToPass = CalculateDistanceToPass(CurrentVelocity, FrictionCoefficient, DeltaTime);
 
 	FHitResult OutHitResult;
 	auto TraceStart = SceneComponentToMove->GetComponentLocation();
-	auto TraceEnd = DistanceToPass + TraceStart + SceneComponentToMove->GetForwardVector() *
-		MaxBounds.X / 2;
+	auto TraceEnd = TraceStart + SceneComponentToMove->GetForwardVector() * (DistanceToPass + MaxBounds.X / 2);
 
 	auto HitExist = GetWorld()->LineTraceSingleByChannel(OutHitResult, TraceStart, TraceEnd, ECC_WorldStatic);
 
@@ -122,7 +119,7 @@ FVector UCustomMovementComponent::CorrectDistanceByWalls(float DeltaTime) const
 	if (HitExist)
 	{
 		auto DistanceToWall = OutHitResult.Distance - MaxBounds.X / 2;
-		if (FMath::IsNearlyZero(DistanceToWall, 0.1f) || DistanceToWall < 0)
+		if (DistanceToWall <= SMALL_DISTANCE)
 		{
 			const auto NewForward = SceneComponentToMove->GetForwardVector() + 2 * OutHitResult.ImpactNormal;
 			const FRotator NewRotation = UKismetMathLibrary::MakeRotFromXZ(NewForward, FVector::UpVector);
@@ -134,7 +131,7 @@ FVector UCustomMovementComponent::CorrectDistanceByWalls(float DeltaTime) const
 		return DistanceToWall * SceneComponentToMove->GetForwardVector();
 	}
 
-	return DistanceToPass;
+	return DistanceToPass * SceneComponentToMove->GetForwardVector();
 }
 
 FVector UCustomMovementComponent::CalculateGroundDistance(float DeltaTime)
@@ -168,7 +165,6 @@ void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 	if (!SceneComponentToMove.IsValid())
 		return;
-
 
 	if (SceneComponentToMove->GetComponentLocation().Z <= GetWorld()->GetWorldSettings()->KillZ)
 	{

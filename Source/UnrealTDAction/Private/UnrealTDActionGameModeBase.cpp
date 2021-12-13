@@ -38,6 +38,7 @@ void AUnrealTDActionGameModeBase::FindAndInitEnemyManager()
 	if (ActorItr)
 	{
 		EnemyManager = *ActorItr;
+		EnemyManager->OnNoEnemiesLeft().AddUObject(this, &AUnrealTDActionGameModeBase::DoOnNoEnemiesLeft);
 	}
 }
 
@@ -110,6 +111,8 @@ void AUnrealTDActionGameModeBase::ClearData()
 {
 	if (ExitArea.IsValid())
 		ExitArea->OnActorBeginOverlap.RemoveAll(this);
+	if (EnemyManager.IsValid())
+		EnemyManager->OnNoEnemiesLeft().RemoveAll(this);
 }
 
 void AUnrealTDActionGameModeBase::LoadNewLevel(const FString& Name)

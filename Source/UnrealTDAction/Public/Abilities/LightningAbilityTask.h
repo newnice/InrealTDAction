@@ -11,7 +11,7 @@ class AEnemyManager;
  * 
  */
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLightningAbilityTaskDelegate);
+DECLARE_DELEGATE(FLightningAbilityTaskDelegate);
 
 UCLASS()
 class UNREALTDACTION_API ULightningAbilityTask : public UAbilityTask
@@ -23,12 +23,11 @@ class UNREALTDACTION_API ULightningAbilityTask : public UAbilityTask
 	FVector ActorPosition;
 	FVector ForwardVector;
 
-	UPROPERTY()
-	TArray<AActor*> EnemiesToDamage;
+	TArray<TTuple<AActor*, float>> EnemiesToKill;
 	TWeakObjectPtr<AEnemyManager> EnemyManager;
 	FVector PreviousAttackedEnemyLocation;
 	FTimerHandle TimerHandle;
-
+	FLightningAbilityTaskDelegate OnCompletedDelegate;
 protected:
 	virtual void Activate() override;
 public:
@@ -39,17 +38,22 @@ public:
 	                                                  const FVector& StartPoint,
 	                                                  const FVector& ForwardVector);
 
-	FLightningAbilityTaskDelegate OnCompleted;
+	FLightningAbilityTaskDelegate& OnCompleted()
+	{
+		return OnCompletedDelegate;
+	}
 
 private:
 	void ApplyAttack();
 	AEnemyManager* FindEnemyManagerActor() const;
-	TArray<AActor*> SortEnemies(TArray<AActor*>& Array) const;
-	TArray<AActor*> FindDamagedEnemies() const;
-	
+	void SortEnemies(TArray<AActor*>& Enemies);
+	void FillEnemiesToKill();
+
+	void CompleteTask();
+
 	UFUNCTION()
 	void OnTimeFinish();
-	
+
 	void KillSingleEnemy();
 
 	virtual void OnDestroy(bool bInOwnerFinished) override;

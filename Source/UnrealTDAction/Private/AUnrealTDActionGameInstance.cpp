@@ -6,6 +6,6 @@
 void UAUnrealTDActionGameInstance::IncreaseScore()
 {
 	CurrentScore++;
-	if (OnScoreChangedAction.IsBound())
-		OnScoreChangedAction.Broadcast(CurrentScore);
+	if (OnScoreChangedDelegate.IsBound())
+		OnScoreChangedDelegate.Broadcast(CurrentScore);
 }

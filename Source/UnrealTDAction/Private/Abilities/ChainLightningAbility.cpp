@@ -34,11 +34,10 @@ void UChainLightningAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 	}
 
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 	AbilityTask = ULightningAbilityTask::CreateLightningTask(
 		this, NAME_None, AbilityRadius, DelayBetweenAttacks, Avatar->GetActorLocation(),
 		Avatar->GetActorForwardVector());
-	AbilityTask->OnCompleted.AddDynamic(this, &UChainLightningAbility::OnTaskCompleted);
+	AbilityTask->OnCompleted().BindUObject(this, &UChainLightningAbility::OnTaskCompleted);
 
 	AbilityTask->ReadyForActivation();
 }
@@ -54,13 +53,23 @@ void UChainLightningAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 	auto Avatar = Cast<APlayerPawn>(CurrentActorInfo->AvatarActor.Get());
 	if (Avatar)
-	{
+	{		
 		Avatar->FreezeMovement(false);
 	}
+	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
+void UChainLightningAbility::CancelAbility(const FGameplayAbilitySpecHandle Handle,
+                                           const FGameplayAbilityActorInfo* ActorInfo,
+                                           const FGameplayAbilityActivationInfo ActivationInfo,
+                                           bool bReplicateCancelAbility)
+{	
+	EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility, true);
+	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
+}
+
 void UChainLightningAbility::OnTaskCompleted()
-{
+{	
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }

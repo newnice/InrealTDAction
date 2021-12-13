@@ -38,7 +38,6 @@ class UNREALTDACTION_API APlayerPawn : public APawn,  public IAbilitySystemInter
 
 	FGameplayAbilitySpecHandle AbilityHandler;
 public:
-	// Sets default values for this pawn's properties
 	APlayerPawn();
 	bool FreezeMovement(bool IsEnabled);
 	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override;

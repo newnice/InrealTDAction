@@ -10,7 +10,7 @@ void UWidgetMainScreen::NativeConstruct()
 {
 	Super::NativeConstruct();
 	auto GameInstance = Cast<UAUnrealTDActionGameInstance>(GetWorld()->GetGameInstance());
-	GameInstance->OnScoreChanged().AddDynamic(this, &UWidgetMainScreen::UpdateScore);
+	GameInstance->OnScoreChanged().AddUObject(this, &UWidgetMainScreen::UpdateScore);
 	UpdateScore(GameInstance->GetScore());
 }
 

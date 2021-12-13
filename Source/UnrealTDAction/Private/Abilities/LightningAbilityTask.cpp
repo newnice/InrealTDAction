@@ -28,20 +28,20 @@ ULightningAbilityTask* ULightningAbilityTask::CreateLightningTask(UGameplayAbili
 
 void ULightningAbilityTask::KillSingleEnemy()
 {
-	auto EnemyIndex = EnemiesToDamage.Num() - 1;
-	const auto EnemyToKill = EnemiesToDamage[EnemyIndex];
+	auto EnemyIndex = EnemiesToKill.Num() - 1;
+	const auto EnemyToKill = EnemiesToKill[EnemyIndex].Key;
 	DrawDebugLine(GetWorld(), PreviousAttackedEnemyLocation, EnemyToKill->GetActorLocation(), FColor::Red, false,
 	              DelayBetweenAttacks + 0.5, 0, 3.f);
 
 	PreviousAttackedEnemyLocation = EnemyToKill->GetActorLocation();
-	EnemiesToDamage.RemoveAt(EnemyIndex);
+	EnemiesToKill.RemoveAt(EnemyIndex);
 	EnemyManager->KillEnemy(EnemyToKill);
 }
 
 void ULightningAbilityTask::ApplyAttack()
 {
 	KillSingleEnemy();
-	if (EnemiesToDamage.Num() > 0)
+	if (EnemiesToKill.Num() > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ULightningAbilityTask::OnTimeFinish,
 		                                       DelayBetweenAttacks,
@@ -49,7 +49,7 @@ void ULightningAbilityTask::ApplyAttack()
 	}
 	else
 	{
-		EndTask();
+		CompleteTask();
 	}
 }
 
@@ -58,15 +58,13 @@ void ULightningAbilityTask::OnTimeFinish()
 {
 	KillSingleEnemy();
 
-	if(EnemiesToDamage.Num() == 0)
+	if (EnemiesToKill.Num() == 0)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
-		OnCompleted.Broadcast();
-		EndTask();
+		CompleteTask();
 	}
 }
 
-TArray<AActor*> ULightningAbilityTask::FindDamagedEnemies() const
+void ULightningAbilityTask::FillEnemiesToKill()
 {
 	TArray<AActor*> OverlapedEnemies;
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes;
@@ -75,13 +73,20 @@ TArray<AActor*> ULightningAbilityTask::FindDamagedEnemies() const
 	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), ActorPosition, AttackRadius, TraceObjectTypes,
 	                                          ABaseEnemy::StaticClass(), TArray<AActor*>{}, OverlapedEnemies);
 
-	return SortEnemies(OverlapedEnemies);
+	SortEnemies(OverlapedEnemies);
+}
+
+void ULightningAbilityTask::CompleteTask()
+{
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	OnCompletedDelegate.ExecuteIfBound();
+	EndTask();
 }
 
 void ULightningAbilityTask::OnDestroy(bool bInOwnerFinished)
 {
-	EnemiesToDamage.Empty();
-	OnCompleted.Clear();
+	EnemiesToKill.Empty();
+	OnCompletedDelegate.Unbind();
 	Super::OnDestroy(bInOwnerFinished);
 }
 
@@ -95,30 +100,22 @@ AEnemyManager* ULightningAbilityTask::FindEnemyManagerActor() const
 	return nullptr;
 }
 
-TArray<AActor*> ULightningAbilityTask::SortEnemies(TArray<AActor*>& EnemiesToKill) const
+void ULightningAbilityTask::SortEnemies(TArray<AActor*>& UnsortedEnemies)
 {
-	TMap<AActor*, float> MapForSort{};
-
-	for (auto& Enemy : EnemiesToKill)
+	for (auto& Enemy : UnsortedEnemies)
 	{
 		auto ActorVector = Enemy->GetActorLocation() - this->ActorPosition;
 		ActorVector.Normalize();
 		auto Dot = FVector::DotProduct(ActorVector, ForwardVector);
-		auto Cross = ActorVector.X * ForwardVector.Y - ActorVector.Y * ForwardVector.X;
-		auto SortPoints = Cross < 0 ? Dot : -(2 + Dot);
-		MapForSort.Add(Enemy, SortPoints);
+		auto CrossZ = ForwardVector.X * ActorVector.Y - ActorVector.X * ForwardVector.Y;
+		auto SortPoints = CrossZ > 0 ? Dot : -(2 + Dot);
+		EnemiesToKill.Emplace(Enemy, SortPoints);
 	}
 
-	MapForSort.ValueSort([](float A, float B)
+	EnemiesToKill.Sort([](TPair<AActor*, float> A, TPair<AActor*, float> B)
 	{
-		return A <= B;
+		return A.Value <= B.Value;
 	});
-
-
-	TArray<AActor*> Result;
-	MapForSort.GenerateKeyArray(Result);
-
-	return Result;
 }
 
 void ULightningAbilityTask::Activate()
@@ -131,21 +128,19 @@ void ULightningAbilityTask::Activate()
 	EnemyManager = FindEnemyManagerActor();
 	if (!EnemyManager.IsValid())
 	{
-		OnCompleted.Broadcast();
-		EndTask();
+		CompleteTask();
 		return;
 	}
-	EnemiesToDamage = FindDamagedEnemies();
-	if (EnemiesToDamage.Num() == 0)
+	FillEnemiesToKill();
+	if (EnemiesToKill.Num() == 0)
 	{
-		OnCompleted.Broadcast();
-		EndTask();
+		CompleteTask();
 		return;
 	}
 
 	DrawCircle(GetWorld(), ActorPosition, FVector::ForwardVector, FVector::RightVector, FColor::Blue, AttackRadius, 32,
 	           false,
-	           DelayBetweenAttacks * EnemiesToDamage.Num() + 1, 0, 3);
+	           DelayBetweenAttacks * EnemiesToKill.Num() + 1, 0, 3);
 
 	ApplyAttack();
 }

@@ -6,7 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "AUnrealTDActionGameInstance.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnScoreChanged, int, Score);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnScoreChanged, int);
 
 UCLASS()
 class UNREALTDACTION_API UAUnrealTDActionGameInstance : public UGameInstance
@@ -14,13 +14,13 @@ class UNREALTDACTION_API UAUnrealTDActionGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 	int CurrentScore = 0;
-	FOnScoreChanged OnScoreChangedAction;
+	FOnScoreChanged OnScoreChangedDelegate;
 public:
 	void IncreaseScore();
 
 	FOnScoreChanged& OnScoreChanged()
 	{
-		return OnScoreChangedAction;
+		return OnScoreChangedDelegate;
 	}
 
 	int GetScore() const { return CurrentScore; }

@@ -3,7 +3,6 @@
 
 #include "EnemyManager.h"
 #include "AUnrealTDActionGameInstance.h"
-#include "UnrealTDActionGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -29,10 +28,10 @@ void AEnemyManager::KillEnemy(AActor* Enemy)
 	Enemy->OnActorBeginOverlap.RemoveAll(this);
 	Enemy->Destroy();
 	TryGenerateBridge();
-	
+
 	if (!IsAnyEnemyAlive())
 	{
-		Cast<AUnrealTDActionGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()))->DoOnNoEnemiesLeft();
+		OnNoEnemiesLeft().Broadcast();
 	}
 }
 

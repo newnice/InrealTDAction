@@ -15,15 +15,15 @@ UCLASS()
 class UNREALTDACTION_API AUnrealTDActionGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	TWeakObjectPtr<AExitArea> ExitArea;
-	TWeakObjectPtr<AEnemyManager> EnemyManager;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config, meta = (AllowPrivateAccess = "true"))
 	TArray<FString> LevelsOrder;
 
+	TWeakObjectPtr<AExitArea> ExitArea;
+	TWeakObjectPtr<AEnemyManager> EnemyManager;
+
 public:
 	AUnrealTDActionGameModeBase();
-	void DoOnNoEnemiesLeft();
 
 protected:
 	virtual void BeginPlay() override;
@@ -32,6 +32,7 @@ private:
 	UFUNCTION()
 	void DoOnExitReached(AActor* OverlappedActor, AActor* OtherActor);
 
+	void DoOnNoEnemiesLeft();
 	void DoOnLevelChanged();
 	void FindAndInitExitArea();
 	void FindAndInitEnemyManager();
